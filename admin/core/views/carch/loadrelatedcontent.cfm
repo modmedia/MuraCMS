@@ -51,7 +51,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfparam name="rc.rcEndDate" default="">
 <cfparam name="rc.rcCategoryID" default="">
 <cfset request.layout=false>
-<cfset baseTypeList = "Page,Folder,Calendar,Gallery,File,Link"/>
+<cfset baseTypeList = "Page,Folder,Calendar,Gallery,File,Link,User"/>
 <cfset rsSubTypes = application.classExtensionManager.getSubTypes(siteID=rc.siteID, activeOnly=true) />
 
 <cfoutput>
@@ -172,54 +172,77 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 
 <cfif not rc.isNew>
-	<cfscript>
-		$=application.serviceFactory.getBean("MuraScope");
+	<cfif len($.event("searchTypeSelector")) && $.event("searchTypeSelector") contains "User">
+		<cfscript>
+			$=application.serviceFactory.getBean("MuraScope");
+			
+			feed=$.getBean('userFeed');
+			feed.setSiteID($.event('siteid'));
+			feed.setSortBy("Lname");
+			feed.setSortDirection("asc");
+			
+			rc.rslist=feed.getQuery();
+			
+			contentType="User";
+		</cfscript>
+	<cfelse>
+		<cfscript>
+			$=application.serviceFactory.getBean("MuraScope");
+		
+			feed=$.getBean("feed");
+			feed.setMaxItems(100);
+			feed.setNextN(100);
+			feed.setLiveOnly(0);
+			feed.setShowNavOnly(0);
+			feed.setSortBy("lastupdate");
+			feed.setSortDirection("desc");
+			
+			feed.addParam(field="tcontent.approved", criteria=1, condition="eq");
 	
-		feed=$.getBean("feed");
-		feed.setMaxItems(100);
-		feed.setNextN(100);
-		feed.setLiveOnly(0);
-		feed.setShowNavOnly(0);
-		feed.setSortBy("lastupdate");
-		feed.setSortDirection("desc");
-		
-		feed.addParam(field="tcontent.approved", criteria=1, condition="eq");
-
-		if (len($.event("searchTypeSelector"))) {
-			feed.addParam(field="tcontent.type",criteria=listFirst($.event("searchTypeSelector"), "^"),condition="eq");	
-			feed.addParam(field="tcontent.subtype",criteria=listLast($.event("searchTypeSelector"), "^"),condition="eq");	
-		}
-		
-		if (len($.event("rcStartDate"))) {
-			feed.addParam(field="tcontent.releaseDate",datatype="date",condition="gte",criteria=$.event("rcStartDate"));	
-		}
-		
-		if (len($.event("rcEndDate"))) {
-			feed.addParam(field="tcontent.releaseDate",datatype="date",condition="lte",criteria=$.event("rcEndDate"));	
-		}
-		
-		if (len($.event("rcCategoryID"))) {
-			feed.setCategoryID($.event("rcCategoryID"));	
-		}
-		
-		if (len($.event("keywords"))) {	
-			subList=$.getBean("contentManager").getPrivateSearch($.event("siteID"),$.event("keywords"));
-			feed.addParam(field="tcontent.contentID",datatype="varchar",condition="in",criteria=valuelist(subList.contentID));
-		}
-		
-		rc.rslist=feed.getQuery();
-	</cfscript>
+			if (len($.event("searchTypeSelector"))) {
+				feed.addParam(field="tcontent.type",criteria=listFirst($.event("searchTypeSelector"), "^"),condition="eq");	
+				feed.addParam(field="tcontent.subtype",criteria=listLast($.event("searchTypeSelector"), "^"),condition="eq");	
+			}
+			
+			if (len($.event("rcStartDate"))) {
+				feed.addParam(field="tcontent.releaseDate",datatype="date",condition="gte",criteria=$.event("rcStartDate"));	
+			}
+			
+			if (len($.event("rcEndDate"))) {
+				feed.addParam(field="tcontent.releaseDate",datatype="date",condition="lte",criteria=$.event("rcEndDate"));	
+			}
+			
+			if (len($.event("rcCategoryID"))) {
+				feed.setCategoryID($.event("rcCategoryID"));	
+			}
+			
+			if (len($.event("keywords"))) {	
+				subList=$.getBean("contentManager").getPrivateSearch($.event("siteID"),$.event("keywords"));
+				feed.addParam(field="tcontent.contentID",datatype="varchar",condition="in",criteria=valuelist(subList.contentID));
+			}
+			
+			rc.rslist=feed.getQuery();
+			
+			contentType="Content";
+		</cfscript>
+	</cfif>
 	<div class="control-group mura-related-internal">
 		<cfif rc.rslist.recordcount>
 			<div id="draggableContainmentInternal" class="list-table search-results">
 				<div class="list-table-content-set">Search Results</label></div>
 				<ul class="rcDraggable list-table-items">
 					<cfoutput query="rc.rslist" startrow="1" maxrows="100">	
-						<cfset crumbdata = application.contentManager.getCrumbList(rc.rslist.contentid, rc.siteid)/>
-						<cfif arrayLen(crumbdata) and structKeyExists(crumbdata[1],"parentArray") and not listFind(arraytolist(crumbdata[1].parentArray),rc.contentid)>
-							<li class="item" data-content-type="#rc.rslist.type#/#rc.rslist.subtype#" data-contentid="#rc.rslist.contentID#">
-								#$.dspZoomNoLinks(crumbdata=crumbdata, charLimit=90, minLevels=2)#
+						<cfif contentType eq "User">
+							<li class="item" data-content-type="User/#rc.rslist.subtype#" data-contentid="#rc.rslist.userID#">
+								#rc.rslist.fname# #rc.rslist.lname# #rc.rslist.subtype#
 							</li>
+						<cfelse>
+							<cfset crumbdata = application.contentManager.getCrumbList(rc.rslist.contentid, rc.siteid)/>
+							<cfif arrayLen(crumbdata) and structKeyExists(crumbdata[1],"parentArray") and not listFind(arraytolist(crumbdata[1].parentArray),rc.contentid)>
+								<li class="item" data-content-type="#rc.rslist.type#/#rc.rslist.subtype#" data-contentid="#rc.rslist.contentID#">
+									#$.dspZoomNoLinks(crumbdata=crumbdata, charLimit=90, minLevels=2)#
+								</li>
+							</cfif>
 						</cfif>
 					</cfoutput>
 				</ul>

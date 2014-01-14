@@ -81,7 +81,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</div>
 		<div class="controls" id="rg"<cfif not len(rcsBean.getAvailableSubTypes())> style="display:none;"</cfif>>
 			<select name="availableSubTypes" size="8" multiple="multiple" class="multiSelect" id="availableSubTypes">
-			<cfloop list="Page,Folder,Calendar,Gallery,File,Link" index="i">
+			<cfloop list="Page,Folder,Calendar,Gallery,File,Link,User" index="i">
 				<option value="#i#/Default" <cfif listFindNoCase(rcsBean.getAvailableSubTypes(),'#i#/Default')> selected</cfif>>#i#/Default</option>
 				<cfquery name="rsItemTypes" dbtype="query">
 				select * from rsSubTypes where lower(type)='#lcase(i)#' and lower(subtype) != 'default'
