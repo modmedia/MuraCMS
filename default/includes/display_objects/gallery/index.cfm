@@ -113,7 +113,7 @@
 	<cfset variables.nextN=variables.$.getBean('utility').getNextN(variables.rssection,event.getContentBean().getNextN(),currentNextNIndex)>
 
 	<cfif NOT len(variables.$.content("displayList"))>
-		<cfset variables.contentListFields="Title,Summary,Credits">
+		<cfset variables.contentListFields="">
 		
 		<cfif variables.$.getBean('contentGateway').gethasComments(variables.$.event('siteid'),variables.$.content('contentID'))>
 			<cfset variables.contentListFields=listAppend(contentListFields,"Comments")>
